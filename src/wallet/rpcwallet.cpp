@@ -4836,7 +4836,7 @@ int32_t ensure_CCrequirements()
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
     else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
-        return(-1);
+        return(-2);
     else return(0);
 }
 
@@ -4923,11 +4923,13 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    int errno;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetaddress [pubkey]\n");
-    if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    errno = ensure_CCrequirements();
+    if ( errno < 0 )
+        throw runtime_error(strprintf("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet. ERR=%d\n", errno));
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Faucet",pubkey));
@@ -5144,12 +5146,20 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     funds = atof(params[0].get_str().c_str()) * COIN;
-    hex = FaucetFund(0,funds);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+    if (funds > 0) {
+        hex = FaucetFund(0,funds);
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+        }
+    } else {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "funding amount must be positive"));
+    }
     return(result);
 }
 
