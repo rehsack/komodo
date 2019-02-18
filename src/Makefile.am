@@ -1,4 +1,4 @@
-DIST_SUBDIRS = secp256k1 univalue cryptoconditions
+DIST_SUBDIRS = secp256k1 univalue cryptoconditions cc
 
 AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(SAN_LDFLAGS) $(HARDENED_LDFLAGS)
 AM_CXXFLAGS = $(SAN_CXXFLAGS) $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS)
@@ -578,9 +578,9 @@ komodod_LDADD += \
   $(LIBZCASH_LIBS)
 
 if TARGET_DARWIN
-komodod_LDADD += libcc.dylib -lncurses
+komodod_LDADD += cc/libcc.la -lncurses
 else
-komodod_LDADD += libcc.so -lncurses
+komodod_LDADD += cc/libcc.la -lncurses
 endif
 
 
